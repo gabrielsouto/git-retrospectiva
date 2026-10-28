@@ -365,7 +365,7 @@ function TopFiles({ s }: { s: Stats }) {
         {s.topFiles.map((f, i) => {
           const { dir, name, ext } = splitPath(f.path);
           return (
-          <motion.li key={f.path} initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.18, duration: 0.6 }}>
+          <motion.li key={f.path} initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.12, duration: 0.5 }}>
             <span className="track-n">{i + 1}</span>
             <span className="track-cover" style={{ background: `hsl(${(i * 67 + 140) % 360} 80% 60%)` }}>
               {(ext || name).slice(0, 4)}
@@ -519,7 +519,7 @@ export function buildSlides(s: Stats): StorySlide[] {
     { id: 'weekdays', duration: 7, background: g('#3a1d04', '#d9640f'), render: () => <Weekdays s={s} /> },
     s.longestStreak.length > 0 && { id: 'streak', duration: 6, background: g('#3a0606', '#e0301e'), render: () => <Streak s={s} /> },
     s.languages.length > 0 && { id: 'languages', duration: 7, background: g('#14062e', '#7b2ff7'), render: () => <Languages s={s} /> },
-    s.topFiles.length > 0 && { id: 'files', duration: 8, background: g('#121212', '#1db954'), render: () => <TopFiles s={s} /> },
+    s.topFiles.length > 0 && { id: 'files', duration: 10, background: g('#121212', '#1db954'), render: () => <TopFiles s={s} /> },
     s.contributors.length > 1 && { id: 'people', duration: 8, background: g('#2e1a04', '#c9a227'), render: () => <Contributors s={s} /> },
     s.words.length > 3 && { id: 'words', duration: 8, background: g('#04202e', '#0aa3c2'), render: () => <Words s={s} /> },
     { id: 'moments', duration: 9, background: g('#2a0b2e', '#a81fa0'), render: () => <Highlights s={s} /> },

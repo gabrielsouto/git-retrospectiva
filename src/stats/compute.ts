@@ -253,7 +253,7 @@ export function computeStats(repoName: string, all: Commit[], filters: Filters, 
   const topFiles = [...files.entries()]
     .map(([path, f]) => ({ path, ...f }))
     .sort((a, b) => b.commits - a.commits || b.lines - a.lines)
-    .slice(0, 5);
+    .slice(0, 10);
 
   const total = commits.length || 1;
   const weekendShare = (weekdays[0] + weekdays[6]) / total;

@@ -304,16 +304,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .lang-name { text-shadow: 0 0 40px rgba(255, 255, 255, 0.25); }
 
 /* Top files as tracks */
-.tracks { list-style: none; padding: 0; margin: 24px 0 0; width: 100%; display: flex; flex-direction: column; gap: 12px; }
-.tracks li { display: flex; align-items: center; gap: 14px; text-align: left; }
-.track-n { flex-shrink: 0; width: 24px; font-size: 1.4rem; font-weight: 700; color: var(--muted); }
+.tracks { list-style: none; padding: 0; margin: 20px 0 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.tracks li { display: flex; align-items: center; gap: 12px; text-align: left; }
+.track-n { flex-shrink: 0; width: 28px; font-size: 1.2rem; font-weight: 700; color: var(--muted); text-align: right; }
 .track-cover {
-  width: 52px; height: 52px; border-radius: 6px; flex-shrink: 0; min-width: 52px;
+  width: 44px; height: 44px; border-radius: 6px; flex-shrink: 0; min-width: 44px;
   display: grid; place-items: center; color: #111; font-weight: 700; text-transform: uppercase; font-size: 0.8rem;
 }
 .track-meta { display: flex; flex-direction: column; min-width: 0; }
 .track-meta strong {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   line-height: 1.2;
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -321,7 +321,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.track-meta > span { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.track-meta > span { color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
+
+/* Ten tracks fit in two columns on wide screens. */
+@container (min-width: 720px) {
+  .center.wide:has(.tracks) { max-width: 960px; }
+  .tracks { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(5, auto); gap: 12px 32px; }
+}
 
 /* Podium */
 .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; width: 100%; margin-top: 24px; }
@@ -391,7 +397,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .ranking li { grid-template-columns: 22px 90px 1fr 44px; }
   .calendar { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .bars { height: 160px; }
-  .track-meta strong { font-size: 1rem; }
+  .track-meta strong { font-size: 0.95rem; }
+  .tracks { gap: 6px; margin-top: 12px; }
+  .track-cover { width: 36px; height: 36px; min-width: 36px; font-size: 0.7rem; }
+  .track-n { font-size: 1rem; width: 22px; }
   .bars-label { font-size: 0.55rem; }
 }
 
