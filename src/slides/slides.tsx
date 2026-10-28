@@ -188,7 +188,7 @@ function Months({ s }: { s: Stats }) {
   return (
     <div className="center wide">
       <Kicker>O seu mês de pico foi</Kicker>
-      <Big delay={0.2}>{best?.label}</Big>
+      <Big delay={0.2}>{s.peakMonth?.label}</Big>
       <div className="bars">
         {s.months.map((m, i) => (
           <div key={m.label} className="bars-col">
@@ -202,7 +202,10 @@ function Months({ s }: { s: Stats }) {
           </div>
         ))}
       </div>
-      <Note delay={1.6}>{plural(best?.count ?? 0, 'commit', 'commits')} só nesse período.</Note>
+      <Note delay={1.6}>
+        {plural(s.peakMonth?.count ?? 0, 'commit', 'commits')} só nesse mês.
+        {s.monthsByYear && best && ` E ${best.label} foi o ano mais movimentado, com ${plural(best.count, 'commit', 'commits')}.`}
+      </Note>
     </div>
   );
 }

@@ -38,7 +38,11 @@ export interface Stats {
   filesTouched: number;
   days: { dateKey: string; count: number }[];
   busiestDay: { dateKey: string; count: number } | null;
+  /** Bars for the activity chart: one per month, or one per year for long histories. */
   months: { label: string; count: number }[];
+  monthsByYear: boolean;
+  /** The single busiest calendar month, e.g. "outubro de 2018". */
+  peakMonth: { label: string; count: number } | null;
   hours: number[];
   weekdays: number[];
   weekendShare: number;
@@ -201,6 +205,15 @@ export function computeStats(repoName: string, all: Commit[], filters: Filters, 
   );
 
   const monthKeys = [...perMonth.keys()].sort();
+  const MONTH_NAMES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  let peakMonth: { label: string; count: number } | null = null;
+  for (const [key, count] of perMonth) {
+    if (!peakMonth || count > peakMonth.count) {
+      const [y, m] = key.split('-').map(Number);
+      peakMonth = { label: `${MONTH_NAMES[m - 1]} de ${y}`, count };
+    }
+  }
+  let monthsByYear = false;
   let months: { label: string; count: number }[];
   if (filters.period.kind === 'year') {
     months = MONTHS.map((label, i) => ({
@@ -208,9 +221,13 @@ export function computeStats(repoName: string, all: Commit[], filters: Filters, 
       count: perMonth.get(`${filters.period.kind === 'year' ? filters.period.year : 0}-${String(i + 1).padStart(2, '0')}`) ?? 0,
     }));
   } else if (monthKeys.length && monthSpan(monthKeys[0], monthKeys[monthKeys.length - 1]) > 24) {
+    monthsByYear = true;
     const perYear = new Map<string, number>();
     for (const [k, v] of perMonth) perYear.set(k.slice(0, 4), (perYear.get(k.slice(0, 4)) ?? 0) + v);
-    months = [...perYear.keys()].sort().map((y) => ({ label: y, count: perYear.get(y)! }));
+    const years = [...perYear.keys()].map(Number);
+    months = [];
+    // Keep quiet years in the chart so gaps are visible.
+    for (let y = Math.min(...years); y <= Math.max(...years); y++) months.push({ label: String(y), count: perYear.get(String(y)) ?? 0 });
   } else {
     months = [];
     if (monthKeys.length) {
@@ -259,6 +276,8 @@ export function computeStats(repoName: string, all: Commit[], filters: Filters, 
     days,
     busiestDay,
     months,
+    monthsByYear,
+    peakMonth,
     hours,
     weekdays,
     weekendShare,

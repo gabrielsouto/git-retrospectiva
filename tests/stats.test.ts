@@ -38,6 +38,8 @@ describe('computeStats', () => {
     expect(s.days).toHaveLength(365);
     expect(s.months).toHaveLength(12);
     expect(s.months[2].count).toBe(3);
+    expect(s.monthsByYear).toBe(false);
+    expect(s.peakMonth).toEqual({ label: 'março de 2025', count: 3 });
     expect(s.contributors.map((c) => c.name)).toEqual(['Ana', 'Bruno']);
     expect(s.words.find((w) => w.word === 'login')?.count).toBe(2);
   });
@@ -46,6 +48,20 @@ describe('computeStats', () => {
     const s = computeStats('demo', repo.commits, { period: { kind: 'all' }, email: 'bruno@x.dev' }, 'Bruno');
     expect(s.totalCommits).toBe(1);
     expect(s.authorLabel).toBe('Bruno');
+  });
+
+  it('groups long histories by year but still names the peak month', () => {
+    const long = parseGitLog(
+      [
+        '@@@a||Ana|ana@x.dev|2018-10-31T10:00:00-03:00|um',
+        '@@@b||Ana|ana@x.dev|2018-10-30T10:00:00-03:00|dois',
+        '@@@c||Ana|ana@x.dev|2021-02-01T10:00:00-03:00|três',
+      ].join('\n'),
+    );
+    const s = computeStats('x', long.commits, { period: { kind: 'all' }, email: null });
+    expect(s.monthsByYear).toBe(true);
+    expect(s.months.map((m) => m.label)).toEqual(['2018', '2019', '2020', '2021']);
+    expect(s.peakMonth).toEqual({ label: 'outubro de 2018', count: 2 });
   });
 
   it('builds stats for the demo repository', () => {
