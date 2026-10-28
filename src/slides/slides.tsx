@@ -1,8 +1,9 @@
 import confetti from 'canvas-confetti';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect } from 'react';
+import { breakable } from '../components/Breakable';
 import { CountUp } from '../components/CountUp';
-import { fmt, fmtDate, pct, plural, shortPath, WEEKDAYS, WEEKDAYS_SHORT } from '../components/format';
+import { fmt, fmtDate, pct, plural, shortPath, splitPath, WEEKDAYS, WEEKDAYS_SHORT } from '../components/format';
 import { GrowingTree } from '../components/GrowingTree';
 import { SummaryCard } from '../components/SummaryCard';
 import type { StorySlide } from '../components/StoryPlayer';
@@ -361,20 +362,23 @@ function TopFiles({ s }: { s: Stats }) {
       <Kicker>Os hits do ano</Kicker>
       <Note delay={0.3}>Os arquivos que você mais "ouviu".</Note>
       <ol className="tracks">
-        {s.topFiles.map((f, i) => (
+        {s.topFiles.map((f, i) => {
+          const { dir, name, ext } = splitPath(f.path);
+          return (
           <motion.li key={f.path} initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.18, duration: 0.6 }}>
             <span className="track-n">{i + 1}</span>
             <span className="track-cover" style={{ background: `hsl(${(i * 67 + 140) % 360} 80% 60%)` }}>
-              {f.path.split('.').pop()?.slice(0, 3)}
+              {(ext || name).slice(0, 4)}
             </span>
             <span className="track-meta">
-              <strong title={f.path}>{shortPath(f.path.split('/').pop() ?? f.path, 30)}</strong>
+              <strong title={f.path}>{breakable(name)}</strong>
               <span>
-                {shortPath(f.path, 40)} · {plural(f.commits, 'commit', 'commits')}
+                {dir ? shortPath(dir, 36) : 'raiz do projeto'} · {plural(f.commits, 'commit', 'commits')}
               </span>
             </span>
           </motion.li>
-        ))}
+          );
+        })}
       </ol>
     </div>
   );

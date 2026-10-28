@@ -2,7 +2,8 @@ import { toPng } from 'html-to-image';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import type { Stats } from '../stats/compute';
-import { fmt, safeFilename, shortPath } from './format';
+import { breakable } from './Breakable';
+import { fmt, plural, safeFilename } from './format';
 import { useVideoExport } from './StoryPlayer';
 
 export function SummaryCard({ s }: { s: Stats }) {
@@ -29,7 +30,7 @@ export function SummaryCard({ s }: { s: Stats }) {
     { label: 'Commits', value: fmt(s.totalCommits) },
     { label: 'Linhas +/−', value: `+${fmt(s.linesAdded)} / −${fmt(s.linesRemoved)}` },
     { label: 'Dias ativos', value: fmt(s.activeDays) },
-    { label: 'Maior sequência', value: `${fmt(s.longestStreak.length)} dias` },
+    { label: 'Maior sequência', value: plural(s.longestStreak.length, 'dia', 'dias') },
     { label: 'Linguagem', value: s.languages[0]?.name ?? '—' },
     { label: 'Horário de pico', value: `${peak}h` },
   ];
@@ -63,7 +64,7 @@ export function SummaryCard({ s }: { s: Stats }) {
         {s.topFiles[0] && (
           <div className="card-foot">
             <span>Arquivo nº 1</span>
-            <strong>{shortPath(s.topFiles[0].path, 38)}</strong>
+            <strong title={s.topFiles[0].path}>{breakable(s.topFiles[0].path.split('/').pop()!)}</strong>
           </div>
         )}
       </motion.div>

@@ -95,3 +95,15 @@ describe('safeFilename', () => {
     expect(safeFilename('retrospectiva-Meu Repo-todo o histórico.mp4')).toBe('retrospectiva-meu-repo-todo-o-historico.mp4');
   });
 });
+
+describe('paths', () => {
+  it('shortens from the left keeping whole segments', async () => {
+    const { shortPath, splitPath } = await import('../src/components/format');
+    expect(shortPath('src/Controller/ProcessoAdministrativoController.php', 40)).toBe('…/ProcessoAdministrativoController.php');
+    expect(shortPath('webroot/js/Acordo/parte.js', 40)).toBe('webroot/js/Acordo/parte.js');
+    expect(shortPath('a/b/Controller/Component', 22)).toBe('…/Controller/Component');
+    expect(splitPath('src/Controller/AcordoController.php')).toEqual({ dir: 'src/Controller', name: 'AcordoController', ext: 'php' });
+    expect(splitPath('.env')).toEqual({ dir: '', name: '.env', ext: '' });
+    expect(splitPath('Dockerfile')).toEqual({ dir: '', name: 'Dockerfile', ext: '' });
+  });
+});
