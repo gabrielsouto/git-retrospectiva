@@ -28,6 +28,10 @@ Dá para filtrar por ano, últimos 12 meses ou todo o histórico, e por autor.
 
 ## Como usar
 
+A versão publicada fica em **https://gabrielsouto.github.io/git-retrospectiva/**, atualizada a cada push na `main` pelo workflow `pages.yml`.
+
+Para rodar localmente:
+
 ```bash
 npm install
 npm run dev
