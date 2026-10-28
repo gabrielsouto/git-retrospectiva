@@ -1,8 +1,10 @@
 # Git Retrospectiva
 
-Um "Wrapped" para repositórios git: escolha a pasta de um projeto na sua máquina e assista a uma retrospectiva animada, em slides no estilo stories, com os números do seu ano em commits.
+Um "Wrapped" para repositórios git: escolha a pasta de um projeto na sua máquina, ou cole o endereço de um repositório público do GitHub, e assista a uma retrospectiva animada, em slides no estilo stories, com os números do seu ano em commits.
 
-Tudo roda no navegador. O app lê a pasta `.git` localmente e nenhum código, commit ou estatística é enviado para servidor algum.
+Tudo roda no navegador. Com uma pasta local, o app lê a pasta `.git` ali mesmo e nada é enviado para servidor algum. Com um repositório do GitHub, o histórico é baixado direto para a memória do navegador (veja [Repositórios do GitHub](#repositórios-do-github)).
+
+A retrospectiva pode ser baixada como imagem (o cartão final) ou como vídeo vertical (9:16), pronto para stories.
 
 ## O que aparece na retrospectiva
 
@@ -31,12 +33,29 @@ npm install
 npm run dev
 ```
 
-Abra o endereço mostrado e clique em **Escolher pasta do repositório**, selecionando a pasta raiz do projeto (a que contém `.git`).
+Abra o endereço mostrado e escolha uma das opções:
+
+- **Endereço do GitHub**: cole `dono/repositório` ou a URL do repositório e clique em **Abrir**.
+- **Escolher pasta local**: selecione a pasta raiz do projeto (a que contém `.git`).
 
 - **Chrome e Edge** usam a File System Access API e leem só a pasta `.git`.
 - **Firefox e Safari** usam o seletor de pastas padrão, que enumera a pasta inteira antes de filtrar o `.git`. Em projetos com `node_modules` grande isso pode demorar.
 - Para repositórios muito grandes, use **Colar saída do git log**: o app mostra o comando a rodar e aceita a saída colada ou o arquivo arrastado.
 - **Ver demonstração** usa dados fictícios.
+
+## Repositórios do GitHub
+
+O GitHub não libera CORS nos endpoints do git, então o navegador não consegue baixar um repositório sozinho. O download passa por um proxy CORS, por padrão o público do isomorphic-git (`https://cors.isomorphic-git.org`). Ele tem limite de uso e só serve para repositórios públicos; para uso frequente ou repositórios grandes, rode o seu (por exemplo com [@isomorphic-git/cors-proxy](https://github.com/isomorphic-git/cors-proxy)) e informe o endereço em **Proxy CORS** na tela inicial.
+
+Só o banco de dados do git é baixado (sem os arquivos de trabalho), com o histórico completo da branch padrão. Repositórios com dezenas de milhares de commits podem levar alguns minutos e usar bastante memória.
+
+## Vídeo
+
+O botão de download no topo da retrospectiva (ou **Baixar vídeo** no cartão final) grava a apresentação inteira, do primeiro ao último slide, num quadro vertical 9:16:
+
+- O navegador pede permissão para capturar a aba. Escolha a aba do Git Retrospectiva e mantenha-a visível até o fim (cerca de 2 minutos).
+- No Chrome e no Edge a captura é recortada só no quadro e sai em MP4. Em navegadores sem Region Capture, a aba inteira é gravada, e o formato pode ser WebM.
+- A resolução acompanha o tamanho da janela: quanto maior a janela, maior o vídeo.
 
 ## Como funciona
 
@@ -45,9 +64,11 @@ Abra o endereço mostrado e clique em **Escolher pasta do repositório**, seleci
 - Lockfiles, `node_modules`, `dist`, `vendor` e arquivos minificados ficam fora das contagens de linhas, arquivos e linguagens.
 - Commits de merge são contados à parte e não entram nas demais estatísticas.
 - Horários e datas usam o fuso do autor registrado em cada commit.
+- Repositórios remotos são clonados com `git.clone` do isomorphic-git para um sistema de arquivos em memória, e daí em diante seguem o mesmo caminho das pastas locais.
+- O vídeo é gravado com `getDisplayMedia` e `MediaRecorder`, recortado com Region Capture (`CropTarget`) quando disponível.
 - Animações com [Motion](https://motion.dev/), confete com canvas-confetti, cartão exportado com html-to-image. O app respeita `prefers-reduced-motion`.
 
-Limitações: clones rasos (`--depth`) e worktrees em que `.git` é um arquivo não são suportados. Só o histórico alcançável a partir de `HEAD` é lido.
+Limitações: repositórios privados do GitHub não são suportados; clones rasos (`--depth`) e worktrees em que `.git` é um arquivo não são suportados. Só o histórico alcançável a partir de `HEAD` é lido.
 
 ## Desenvolvimento
 
@@ -60,6 +81,12 @@ Para medir desempenho e precisão em um repositório real:
 
 ```bash
 REPO=/caminho/do/repo N=1000 npx vitest run tests/benchmark.test.ts
+```
+
+Para testar o clone de um repositório do GitHub (precisa de rede):
+
+```bash
+NETWORK=1 npx vitest run tests/clone.test.ts
 ```
 
 ## Inspirações

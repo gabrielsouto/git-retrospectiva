@@ -2,11 +2,13 @@ import { toPng } from 'html-to-image';
 import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import type { Stats } from '../stats/compute';
-import { fmt, shortPath } from './format';
+import { fmt, safeFilename, shortPath } from './format';
+import { useVideoExport } from './StoryPlayer';
 
 export function SummaryCard({ s }: { s: Stats }) {
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const video = useVideoExport();
   const peak = s.hours.indexOf(Math.max(...s.hours));
 
   const download = async () => {
@@ -16,7 +18,7 @@ export function SummaryCard({ s }: { s: Stats }) {
       const url = await toPng(ref.current, { pixelRatio: 2, cacheBust: true });
       const a = document.createElement('a');
       a.href = url;
-      a.download = `retrospectiva-${s.repoName}-${s.periodLabel.replace(/\s+/g, '-')}.png`;
+      a.download = safeFilename(`retrospectiva-${s.repoName}-${s.periodLabel}.png`);
       a.click();
     } finally {
       setBusy(false);
@@ -69,6 +71,11 @@ export function SummaryCard({ s }: { s: Stats }) {
         <button className="btn primary" onClick={download} disabled={busy}>
           {busy ? 'Gerando…' : 'Baixar imagem'}
         </button>
+        {video && (
+          <button className="btn" onClick={video.startRecording} disabled={video.busy}>
+            Baixar vídeo
+          </button>
+        )}
       </motion.div>
     </div>
   );

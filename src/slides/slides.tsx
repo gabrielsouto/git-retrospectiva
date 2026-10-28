@@ -66,7 +66,8 @@ function Intro({ s }: { s: Stats }) {
       <Kicker delay={0.4}>Retrospectiva de {s.periodLabel}</Kicker>
       <Big delay={0.6}>{s.repoName}</Big>
       <Note delay={1.1}>
-        {s.authorLabel === 'todo o time' ? 'Vamos ver o que o time construiu.' : `Preparado para ${s.authorLabel}.`} Toque para avançar.
+        {s.authorLabel === 'todo o time' ? 'Vamos ver o que o time construiu.' : `Preparado para ${s.authorLabel}.`}{' '}
+        <span className="tap-hint">Toque para avançar.</span>
       </Note>
     </div>
   );

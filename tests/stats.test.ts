@@ -72,3 +72,10 @@ describe('countLineChanges', () => {
     expect(countLineChanges('x\n', null)).toEqual({ added: 0, removed: 1 });
   });
 });
+
+describe('safeFilename', () => {
+  it('strips accents and spaces', async () => {
+    const { safeFilename } = await import('../src/components/format');
+    expect(safeFilename('retrospectiva-Meu Repo-todo o histórico.mp4')).toBe('retrospectiva-meu-repo-todo-o-historico.mp4');
+  });
+});

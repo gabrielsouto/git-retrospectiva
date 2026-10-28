@@ -22,3 +22,13 @@ export function shortPath(path: string, max = 34) {
   const file = parts.pop()!;
   return `…/${file}`.length <= max ? `…/${parts.length ? parts[parts.length - 1] + '/' : ''}${file}`.slice(-max) : file.slice(-max);
 }
+
+/** ASCII-only file name: some browsers drop `download` names with accents. */
+export function safeFilename(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^\w.-]+/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+}

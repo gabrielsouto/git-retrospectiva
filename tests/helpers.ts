@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
-import { ReadOnlyFs } from '../src/git/fsAdapter';
+import { MemoryFs } from '../src/git/fsAdapter';
 
 export function git(cwd: string, ...args: string[]) {
   return execFileSync('git', args, {
@@ -55,7 +55,7 @@ export function makeRepo() {
 
 /** Indexes `<dir>/.git` the same way the browser worker does. */
 export function fsFromDisk(dir: string) {
-  const fs = new ReadOnlyFs();
+  const fs = new MemoryFs();
   const root = join(dir, '.git');
   const walk = (p: string) => {
     for (const name of readdirSync(p)) {

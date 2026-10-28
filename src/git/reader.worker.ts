@@ -1,11 +1,12 @@
 import './buffer-polyfill';
-import { ReadOnlyFs } from './fsAdapter';
-import { diffCommit, GITDIR, readCommits } from './reader';
+import { MemoryFs } from './fsAdapter';
+import { cloneRemote, diffCommit, GITDIR, readCommits } from './reader';
 import type { Commit, FileChange } from './types';
 
 export type WorkerSource =
   | { kind: 'handle'; handle: FileSystemDirectoryHandle }
-  | { kind: 'files'; files: { path: string; file: File }[] };
+  | { kind: 'files'; files: { path: string; file: File }[] }
+  | { kind: 'url'; url: string; corsProxy: string };
 
 export type WorkerRequest =
   | { type: 'open'; source: WorkerSource }
@@ -17,14 +18,14 @@ export type WorkerResponse =
   | { type: 'diffs'; results: { hash: string; files: FileChange[] }[] }
   | { type: 'error'; message: string };
 
-let fs: ReadOnlyFs | null = null;
+let fs: MemoryFs | null = null;
 
 function post(msg: WorkerResponse) {
   self.postMessage(msg);
 }
 
 async function indexHandle(root: FileSystemDirectoryHandle) {
-  const index = new ReadOnlyFs();
+  const index = new MemoryFs();
   let gitDir: FileSystemDirectoryHandle;
   try {
     gitDir = await root.getDirectoryHandle('.git');
@@ -62,7 +63,7 @@ async function indexHandle(root: FileSystemDirectoryHandle) {
 }
 
 function indexFiles(files: { path: string; file: File }[]) {
-  const index = new ReadOnlyFs();
+  const index = new MemoryFs();
   let name = 'repositório';
   for (const { path, file } of files) {
     const parts = path.split('/');
@@ -79,8 +80,20 @@ function indexFiles(files: { path: string; file: File }[]) {
   return { index, name };
 }
 
+async function indexRemote(url: string, corsProxy: string) {
+  const index = new MemoryFs();
+  await cloneRemote(index, url, corsProxy, (label, done, total) => post({ type: 'progress', label, done, total }));
+  const name = url.replace(/\.git$/, '').split('/').filter(Boolean).pop() ?? 'repositório';
+  return { index, name };
+}
+
 async function open(source: WorkerSource) {
-  const { index, name } = source.kind === 'handle' ? await indexHandle(source.handle) : indexFiles(source.files);
+  const { index, name } =
+    source.kind === 'handle'
+      ? await indexHandle(source.handle)
+      : source.kind === 'url'
+        ? await indexRemote(source.url, source.corsProxy)
+        : indexFiles(source.files);
   fs = index;
   if (!index.has(`${GITDIR}/HEAD`)) throw new Error('Arquivo .git/HEAD não encontrado.');
   post({ type: 'progress', label: 'Lendo o histórico', done: 0, total: 0 });

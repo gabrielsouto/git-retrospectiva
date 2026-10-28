@@ -2,7 +2,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { demoRepo } from './git/demo';
 import {
+  DEFAULT_CORS_PROXY,
   filesFromInput,
+  normalizeRepoUrl,
   GIT_LOG_COMMAND,
   openRepo,
   parseGitLog,
@@ -52,6 +54,12 @@ export function App() {
     );
   };
 
+  const onUrl = (input: string, corsProxy: string) => {
+    const url = normalizeRepoUrl(input);
+    if (!url) return setScreen({ kind: 'home', error: 'Não reconheci esse endereço. Use algo como dono/repositório ou https://github.com/dono/repositório.' });
+    load(() => openRepo({ kind: 'url', url, corsProxy }, (progress) => setScreen({ kind: 'loading', progress })));
+  };
+
   const onFiles = (list: FileList | null) => {
     if (!list?.length) return;
     const files = filesFromInput(list);
@@ -84,7 +92,7 @@ export function App() {
       />
       <AnimatePresence mode="wait">
         {screen.kind === 'home' && (
-          <Home key="home" error={screen.error} onPick={onPick} onPaste={() => setScreen({ kind: 'paste' })} onDemo={() => load(async () => demoRepo())} />
+          <Home key="home" error={screen.error} onPick={onPick} onUrl={onUrl} onPaste={() => setScreen({ kind: 'paste' })} onDemo={() => load(async () => demoRepo())} />
         )}
         {screen.kind === 'paste' && (
           <Paste
@@ -97,7 +105,10 @@ export function App() {
         {screen.kind === 'setup' && <Setup key="setup" repo={screen.repo} onStart={start} onBack={() => setScreen({ kind: 'home' })} />}
       </AnimatePresence>
       {screen.kind === 'story' && (
-        <StoryPlayer slides={buildSlides(screen.stats)} onExit={() => setScreen({ kind: 'setup', repo: screen.repo })} />
+        <StoryPlayer
+          slides={buildSlides(screen.stats)}
+          videoName={`retrospectiva-${screen.stats.repoName}-${screen.stats.periodLabel.replace(/\s+/g, '-')}`}
+          onExit={() => setScreen({ kind: 'setup', repo: screen.repo })} />
       )}
     </>
   );
@@ -110,7 +121,40 @@ const page = {
   transition: { duration: 0.35 },
 };
 
-function Home({ error, onPick, onPaste, onDemo }: { error?: string; onPick: () => void; onPaste: () => void; onDemo: () => void }) {
+const PROXY_KEY = 'git-retrospectiva:cors-proxy';
+
+function readProxy() {
+  try {
+    return localStorage.getItem(PROXY_KEY) ?? DEFAULT_CORS_PROXY;
+  } catch {
+    return DEFAULT_CORS_PROXY;
+  }
+}
+
+function Home({
+  error,
+  onPick,
+  onUrl,
+  onPaste,
+  onDemo,
+}: {
+  error?: string;
+  onPick: () => void;
+  onUrl: (url: string, corsProxy: string) => void;
+  onPaste: () => void;
+  onDemo: () => void;
+}) {
+  const [url, setUrl] = useState('');
+  const [proxy, setProxy] = useState(readProxy);
+  const submitUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      localStorage.setItem(PROXY_KEY, proxy);
+    } catch {
+      // Remembering the proxy is a convenience only.
+    }
+    onUrl(url, proxy.trim());
+  };
   return (
     <motion.main className="home" {...page}>
       <div className="home-glow" aria-hidden />
@@ -130,12 +174,33 @@ function Home({ error, onPick, onPaste, onDemo }: { error?: string; onPick: () =
         ))}
       </h1>
       <p className="lead">
-        Escolha a pasta de um repositório na sua máquina e assista a uma retrospectiva animada, no estilo Wrapped. Tudo roda no
-        seu navegador: nenhum código ou commit sai do seu computador.
+        Escolha a pasta de um repositório na sua máquina, ou cole o endereço de um repositório público do GitHub, e assista a
+        uma retrospectiva animada no estilo Wrapped. Tudo é processado no seu navegador.
       </p>
+      <form className="url-form" onSubmit={submitUrl}>
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="github.com/dono/repositório"
+          aria-label="Endereço do repositório no GitHub"
+          spellCheck={false}
+          autoCapitalize="off"
+        />
+        <button className="btn primary" disabled={!url.trim()}>
+          Abrir
+        </button>
+      </form>
+      <details className="proxy">
+        <summary>Proxy CORS</summary>
+        <p>
+          O GitHub não permite que o navegador baixe repositórios direto, então o download passa por um proxy. O padrão é o
+          proxy público do isomorphic-git; você pode usar o seu.
+        </p>
+        <input value={proxy} onChange={(e) => setProxy(e.target.value)} aria-label="Endereço do proxy CORS" spellCheck={false} />
+      </details>
       <div className="actions">
-        <button className="btn primary" onClick={onPick}>
-          Escolher pasta do repositório
+        <button className="btn" onClick={onPick}>
+          Escolher pasta local
         </button>
         <button className="btn" onClick={onPaste}>
           Colar saída do git log
@@ -151,8 +216,8 @@ function Home({ error, onPick, onPaste, onDemo }: { error?: string; onPick: () =
       )}
       <p className="fine">
         {supportsDirectoryPicker
-          ? 'Selecione a pasta raiz do projeto (a que contém a pasta .git).'
-          : 'Seu navegador vai pedir para enviar a pasta: os arquivos são lidos localmente, nada é enviado.'}
+          ? 'Na pasta local, selecione a raiz do projeto (a que contém a pasta .git).'
+          : 'Na pasta local, o navegador vai pedir para "enviar" a pasta, mas os arquivos são lidos só aqui.'}
       </p>
     </motion.main>
   );
@@ -225,7 +290,7 @@ function Loading({ progress }: { progress: Progress }) {
           <div style={{ width: `${ratio * 100}%` }} />
         </div>
       ) : (
-        progress.done > 0 && <small>{fmt(progress.done)} arquivos</small>
+        progress.done > 0 && <small>{fmt(progress.done)}</small>
       )}
     </motion.main>
   );

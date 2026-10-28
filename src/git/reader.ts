@@ -1,5 +1,6 @@
 import git from 'isomorphic-git';
-import type { ReadOnlyFs } from './fsAdapter';
+import http from 'isomorphic-git/http/web';
+import type { MemoryFs } from './fsAdapter';
 import { countLineChanges, isBinary } from './lineDiff';
 import type { Commit, FileChange } from './types';
 
@@ -7,7 +8,49 @@ export const GITDIR = '/.git';
 const MAX_BLOB_BYTES = 1024 * 1024;
 const cache = {};
 
-export async function readCommits(fs: ReadOnlyFs): Promise<Commit[]> {
+const PHASES: Record<string, string> = {
+  'Counting objects': 'Contando objetos no servidor',
+  'Compressing objects': 'Compactando objetos no servidor',
+  'Receiving objects': 'Baixando o histórico',
+  'Resolving deltas': 'Montando o histórico',
+  'Analyzing workdir': 'Preparando',
+  'Updating workdir': 'Preparando',
+};
+
+/** Clones only the git database (no working tree) of a remote repository into memory. */
+export async function cloneRemote(
+  fs: MemoryFs,
+  url: string,
+  corsProxy: string,
+  onProgress: (label: string, done: number, total: number) => void,
+) {
+  try {
+    await git.clone({
+      fs,
+      http,
+      dir: '/',
+      gitdir: GITDIR,
+      url,
+      corsProxy: corsProxy || undefined,
+      singleBranch: true,
+      noCheckout: true,
+      noTags: true,
+      cache,
+      onProgress: (e) => onProgress(PHASES[e.phase] ?? e.phase, e.loaded, e.total ?? 0),
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (/401|403|404|Unauthorized|Forbidden|Not Found/i.test(message)) {
+      throw new Error(`Não consegui acessar ${url}. Confira se a URL está certa e se o repositório é público.`);
+    }
+    if (/fetch|network|CORS/i.test(message)) {
+      throw new Error(`Falha de rede ao baixar o repositório (${message}). O proxy CORS pode estar fora do ar ou limitando requisições.`);
+    }
+    throw e;
+  }
+}
+
+export async function readCommits(fs: MemoryFs): Promise<Commit[]> {
   let entries;
   try {
     entries = await git.log({ fs, gitdir: GITDIR, ref: 'HEAD', cache });
@@ -32,14 +75,14 @@ export async function readCommits(fs: ReadOnlyFs): Promise<Commit[]> {
 
 type TreeEntry = { path: string; oid: string; type: string };
 
-async function readTree(fs: ReadOnlyFs, oid: string | null): Promise<TreeEntry[]> {
+async function readTree(fs: MemoryFs, oid: string | null): Promise<TreeEntry[]> {
   if (!oid) return [];
   const { tree } = await git.readTree({ fs, gitdir: GITDIR, oid, cache });
   return tree;
 }
 
 /** Yields [path, oldBlob, newBlob] for every blob that differs between two trees. */
-async function diffTrees(fs: ReadOnlyFs, a: string | null, b: string | null, prefix: string, out: [string, string | null, string | null][]) {
+async function diffTrees(fs: MemoryFs, a: string | null, b: string | null, prefix: string, out: [string, string | null, string | null][]) {
   if (a === b) return;
   const [ta, tb] = await Promise.all([readTree(fs, a), readTree(fs, b)]);
   const byName = new Map<string, [TreeEntry | null, TreeEntry | null]>();
@@ -57,7 +100,7 @@ async function diffTrees(fs: ReadOnlyFs, a: string | null, b: string | null, pre
   }
 }
 
-async function readText(fs: ReadOnlyFs, oid: string | null): Promise<string | null | 'binary' | 'large'> {
+async function readText(fs: MemoryFs, oid: string | null): Promise<string | null | 'binary' | 'large'> {
   if (!oid) return null;
   const { blob } = await git.readBlob({ fs, gitdir: GITDIR, oid, cache });
   if (blob.byteLength > MAX_BLOB_BYTES) return 'large';
@@ -65,7 +108,7 @@ async function readText(fs: ReadOnlyFs, oid: string | null): Promise<string | nu
   return new TextDecoder().decode(blob);
 }
 
-export async function diffCommit(fs: ReadOnlyFs, hash: string): Promise<FileChange[]> {
+export async function diffCommit(fs: MemoryFs, hash: string): Promise<FileChange[]> {
   const { commit } = await git.readCommit({ fs, gitdir: GITDIR, oid: hash, cache });
   let parentTree: string | null = null;
   if (commit.parent[0]) {

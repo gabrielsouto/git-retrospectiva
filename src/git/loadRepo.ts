@@ -61,6 +61,33 @@ export function openRepo(source: WorkerSource, onProgress: (p: Progress) => void
   });
 }
 
+export const DEFAULT_CORS_PROXY = 'https://cors.isomorphic-git.org';
+
+/**
+ * Accepts `owner/repo`, `github.com/owner/repo` or any https git URL and
+ * returns a URL git can clone, or null when the input is not recognizable.
+ */
+export function normalizeRepoUrl(input: string): string | null {
+  const text = input.trim().replace(/\/+$/, '');
+  if (/^[\w.-]+\/[\w.-]+$/.test(text)) return `https://github.com/${text.replace(/\.git$/, '')}.git`;
+  const withScheme = /^https?:\/\//i.test(text) ? text : `https://${text}`;
+  let url: URL;
+  try {
+    url = new URL(withScheme);
+  } catch {
+    return null;
+  }
+  if (!url.hostname.includes('.')) return null;
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (url.hostname === 'github.com' || url.hostname === 'www.github.com') {
+    // Drop /tree/main, /pulls etc. so links copied from the browser work.
+    if (parts.length < 2) return null;
+    return `https://github.com/${parts[0]}/${parts[1].replace(/\.git$/, '')}.git`;
+  }
+  if (!parts.length) return null;
+  return `${url.origin}${url.pathname}`;
+}
+
 /** The command users run to produce input for {@link parseGitLog}. */
 export const GIT_LOG_COMMAND =
   "git log --numstat --date=iso-strict --format='@@@%H|%P|%an|%ae|%ad|%s'";

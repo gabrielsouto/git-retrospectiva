@@ -78,6 +78,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin: 0 0 8px;
 }
 
+.url-form { display: flex; gap: 8px; width: min(520px, 100%); }
+.url-form input {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 14px 20px;
+}
+.proxy { width: min(520px, 100%); margin: 10px 0 8px; text-align: left; color: var(--muted); font-size: 0.85rem; }
+.proxy summary { cursor: pointer; text-align: center; }
+.proxy p { margin: 8px 0; }
+.proxy input { width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+
 .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 16px; }
 
 .btn {
@@ -147,17 +161,61 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .player {
   position: fixed;
   inset: 0;
+  overflow: hidden;
+  user-select: none;
+  background: #000;
+}
+
+.player-frame {
+  container-type: size;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  user-select: none;
 }
+
+/* While filming, slides play in a 9:16 frame that the capture is cropped to. */
+.player.recording .player-frame {
+  inset: auto;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  height: calc(100% - 72px);
+  aspect-ratio: 9 / 16;
+  max-width: calc(100% - 24px);
+  border-radius: 0;
+}
+.player.recording .player-stage { cursor: default; }
+.player.recording .card-actions,
+.player.recording .tap-hint { visibility: hidden; }
+
+/* The 9:16 frame is shorter than a phone screen: fit the calendar in fewer rows. */
+.player.recording .calendar { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+.recording-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  color: var(--muted);
+  z-index: 5;
+}
+.error-bar { color: #fff; background: rgba(255, 93, 108, 0.25); padding: 8px 12px; border-radius: 12px; white-space: normal; max-width: 90%; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
 
 .player-bars { display: flex; gap: 4px; padding: 12px 16px 0; z-index: 2; }
 .player-bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
 .player-bar-fill { height: 100%; background: #fff; transform-origin: left; }
 
 .player-controls { position: absolute; top: 24px; right: 12px; display: flex; gap: 6px; z-index: 3; }
+.icon-btn:disabled { opacity: 0.5; }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
   background: rgba(0, 0, 0, 0.25); color: #fff; font-size: 0.85rem;
@@ -172,9 +230,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .center.wide { max-width: 760px; }
 .center.full { max-width: none; height: 100%; }
 
-.big { font-size: clamp(2.4rem, 8vw, 4.5rem); line-height: 1; margin: 4px 0 16px; letter-spacing: -0.04em; word-break: break-word; }
-.big .huge { display: block; font-size: clamp(4.5rem, 18vw, 9rem); letter-spacing: -0.05em; }
-.big .unit { display: block; font-size: clamp(1.4rem, 4vw, 2rem); color: var(--muted); letter-spacing: -0.01em; margin-top: 4px; }
+.big { font-size: clamp(2.4rem, 8cqi, 4.5rem); line-height: 1; margin: 4px 0 16px; letter-spacing: -0.04em; word-break: break-word; }
+.big .huge { display: block; font-size: clamp(4.5rem, 18cqi, 9rem); letter-spacing: -0.05em; }
+.big .unit { display: block; font-size: clamp(1.4rem, 4cqi, 2rem); color: var(--muted); letter-spacing: -0.01em; margin-top: 4px; }
 .note { color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; line-height: 1.45; margin: 8px 0 0; max-width: 520px; }
 
 .intro-orb { font-size: 5rem; margin-bottom: 24px; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4)); }
@@ -182,7 +240,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Lines */
 .lines { width: 100%; display: flex; flex-direction: column; gap: 28px; margin: 20px 0; }
 .lines-row { display: grid; grid-template-columns: 1fr; gap: 6px; text-align: left; }
-.lines-value { font-size: clamp(2.2rem, 7vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; }
+.lines-value { font-size: clamp(2.2rem, 7cqi, 3.6rem); font-weight: 700; letter-spacing: -0.03em; }
 .lines-value.plus { color: var(--plus); }
 .lines-value.minus { color: var(--minus); }
 .lines-track { height: 18px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
@@ -211,7 +269,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .bars-label { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
 
 /* Clock */
-.clock { width: min(320px, 78vw); height: auto; margin: 8px 0 16px; overflow: visible; }
+.clock { width: min(320px, 78cqi); height: auto; margin: 8px 0 16px; overflow: visible; }
 .clock-face { fill: rgba(255, 255, 255, 0.08); }
 .clock-ray { stroke: rgba(255, 255, 255, 0.55); stroke-width: 9; stroke-linecap: round; }
 .clock-ray.hot { stroke: var(--hot); }
@@ -226,7 +284,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Weekdays */
 .week { display: flex; justify-content: space-between; width: 100%; max-width: 520px; margin: 24px 0; }
 .week-col { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-weight: 700; }
-.week-dot { width: clamp(36px, 10vw, 60px); aspect-ratio: 1; border-radius: 50%; background: rgba(255, 255, 255, 0.55); }
+.week-dot { width: clamp(36px, 10cqi, 60px); aspect-ratio: 1; border-radius: 50%; background: rgba(255, 255, 255, 0.55); }
 .week-dot.weekend { background: rgba(255, 255, 255, 0.3); }
 .week-dot.hot { background: var(--hot); box-shadow: 0 0 30px rgba(255, 216, 79, 0.7); }
 
@@ -292,7 +350,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* Summary card */
 .card {
-  width: min(380px, 88vw);
+  width: min(380px, 88cqi);
   border-radius: 24px;
   padding: 24px;
   text-align: left;
@@ -317,7 +375,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .card-foot span { font-size: 0.75rem; color: var(--muted); }
 .card-actions { margin-top: 20px; }
 
-@media (max-width: 520px) {
+@container (max-width: 520px) {
   .ranking li { grid-template-columns: 22px 90px 1fr 44px; }
   .calendar { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .bars { height: 160px; }
