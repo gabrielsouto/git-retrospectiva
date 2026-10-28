@@ -219,6 +219,9 @@ function Home({
           ? 'Na pasta local, selecione a raiz do projeto (a que contém a pasta .git).'
           : 'Na pasta local, o navegador vai pedir para "enviar" a pasta, mas os arquivos são lidos só aqui.'}
       </p>
+      <a className="source-link" href="https://github.com/gabrielsouto/git-retrospectiva" target="_blank" rel="noreferrer">
+        Código-fonte no GitHub
+      </a>
     </motion.main>
   );
 }
