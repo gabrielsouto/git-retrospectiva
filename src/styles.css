@@ -190,8 +190,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-radius: 0;
 }
 .player.recording .player-stage { cursor: default; }
-.player.recording .card-actions,
-.player.recording .tap-hint { visibility: hidden; }
+.player.recording .card-actions { visibility: hidden; }
+/* display:none, not visibility: a hidden span still takes room and pushes centered text aside. */
+.player.recording .tap-hint { display: none; }
 
 /* The 9:16 frame is shorter than a phone screen: fit the calendar in fewer rows. */
 .player.recording .calendar { grid-template-columns: repeat(4, 1fr); gap: 8px; }
