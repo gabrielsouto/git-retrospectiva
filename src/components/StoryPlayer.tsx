@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { downloadBlob, requestRecording, supportsVideo, type Recording } from './videoRecorder';
+import type { Recording } from './videoRecorder';
+import { downloadBlob, supportsVideo } from './videoSupport';
 
 export interface StorySlide {
   id: string;
@@ -55,7 +56,7 @@ export function StoryPlayer({ slides, onExit, videoName }: { slides: StorySlide[
   // Auto-advance; while recording, the last slide ends the video after a short tail.
   useEffect(() => {
     const duration = slide.duration || (recording ? VIDEO_TAIL_SECONDS : 0);
-    if ((paused && !recording) || !duration) return;
+    if (paused || !duration) return;
     let last = performance.now();
     let raf = requestAnimationFrame(function tick(now) {
       elapsed.current += (now - last) / 1000;
@@ -84,6 +85,7 @@ export function StoryPlayer({ slides, onExit, videoName }: { slides: StorySlide[
     setRecord({ phase: 'starting' });
     let rec: Recording;
     try {
+      const { requestRecording } = await import('./videoRecorder');
       rec = await requestRecording();
     } catch (e) {
       setRecord({ phase: 'idle' });
@@ -94,16 +96,17 @@ export function StoryPlayer({ slides, onExit, videoName }: { slides: StorySlide[
       rec.cancel();
       setRecord({ phase: 'idle' });
     };
-    // Switch to the 9:16 frame and rewind before filming.
+    // Switch to the 9:16 frame (paused), crop the capture to it, then rewind and film.
     setRecordedSeconds(0);
+    setPaused(true);
     setRecord({ phase: 'recording', recording: rec });
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (frameRef.current) await rec.crop(frameRef.current);
     setIndex(0);
     elapsed.current = 0;
     setProgress(0);
-    setPaused(false);
     setRun((r) => r + 1);
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    if (frameRef.current) await rec.crop(frameRef.current);
+    setPaused(false);
     rec.start();
   };
 

@@ -55,11 +55,11 @@ Só o banco de dados do git é baixado (sem os arquivos de trabalho), com o hist
 
 ## Vídeo
 
-O botão de download no topo da retrospectiva (ou **Baixar vídeo** no cartão final) grava a apresentação inteira, do primeiro ao último slide, num quadro vertical 9:16:
+O botão de download no topo da retrospectiva (ou **Baixar vídeo** no cartão final) grava a apresentação inteira, do primeiro ao último slide, num vídeo vertical 1080×1920:
 
 - O navegador pede permissão para capturar a aba. Escolha a aba do Git Retrospectiva e mantenha-a visível até o fim (cerca de 2 minutos).
-- No Chrome e no Edge a captura é recortada só no quadro e sai em MP4. Em navegadores sem Region Capture, a aba inteira é gravada, e o formato pode ser WebM.
-- A resolução acompanha o tamanho da janela: quanto maior a janela, maior o vídeo.
+- Durante a gravação os slides ocupam a altura toda da janela. Quanto maior a janela, mais nítido fica o vídeo.
+- Cada quadro capturado é recortado e desenhado num canvas de tamanho fixo, codificado com WebCodecs (H.264 por software) e empacotado em MP4 pelo próprio app, com [Mediabunny](https://mediabunny.dev/). Sem WebCodecs, o app usa o `MediaRecorder` sobre esse canvas e o arquivo sai em WebM.
 
 ## Como funciona
 
@@ -69,7 +69,7 @@ O botão de download no topo da retrospectiva (ou **Baixar vídeo** no cartão f
 - Commits de merge são contados à parte e não entram nas demais estatísticas.
 - Horários e datas usam o fuso do autor registrado em cada commit.
 - Repositórios remotos são clonados com `git.clone` do isomorphic-git para um sistema de arquivos em memória, e daí em diante seguem o mesmo caminho das pastas locais.
-- O vídeo é gravado com `getDisplayMedia` e `MediaRecorder`, recortado com Region Capture (`CropTarget`) quando disponível.
+- O vídeo é capturado com `getDisplayMedia`, recortado com Region Capture (`CropTarget`) quando disponível (ou pelas coordenadas do quadro, nos outros navegadores) e codificado com WebCodecs.
 - Animações com [Motion](https://motion.dev/), confete com canvas-confetti, cartão exportado com html-to-image. O app respeita `prefers-reduced-motion`.
 
 Limitações: repositórios privados do GitHub não são suportados; clones rasos (`--depth`) e worktrees em que `.git` é um arquivo não são suportados. Só o histórico alcançável a partir de `HEAD` é lido.
