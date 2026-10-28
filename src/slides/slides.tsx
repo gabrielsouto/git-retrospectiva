@@ -274,7 +274,7 @@ function Weekdays({ s }: { s: Stats }) {
             <motion.div
               className={`week-dot ${i === best ? 'hot' : ''} ${i === 0 || i === 6 ? 'weekend' : ''}`}
               initial={{ scale: 0 }}
-              animate={{ scale: 0.35 + (n / max) * 0.65 }}
+              animate={{ scale: n ? 0.35 + (n / max) * 0.65 : 0.2, opacity: n ? 1 : 0.4 }}
               transition={{ delay: 0.5 + i * 0.1, type: 'spring', stiffness: 160, damping: 12 }}
             />
             <span>{WEEKDAYS_SHORT[i]}</span>
@@ -282,12 +282,18 @@ function Weekdays({ s }: { s: Stats }) {
         ))}
       </div>
       <Note delay={1.5}>
-        {s.weekendShare > 0.15
-          ? `${pct(s.weekendShare)} dos commits caíram no fim de semana. Descansar também é importante!`
-          : `Só ${pct(s.weekendShare)} no fim de semana. Equilíbrio é tudo.`}
+        {weekendText(s)}
       </Note>
     </div>
   );
+}
+
+function weekendText(s: Stats) {
+  const n = s.weekdays[0] + s.weekdays[6];
+  if (n === 0) return 'Nenhum commit no fim de semana. Sábado e domingo foram sagrados.';
+  if (s.weekendShare > 0.15) return `${pct(s.weekendShare)} dos commits caíram no fim de semana. Descansar também é importante!`;
+  const share = s.weekendShare < 0.01 ? 'menos de 1%' : pct(s.weekendShare);
+  return `Só ${plural(n, 'commit', 'commits')} no fim de semana, ${share} do total. Equilíbrio é tudo.`;
 }
 
 function Streak({ s }: { s: Stats }) {
